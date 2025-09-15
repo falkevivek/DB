@@ -1,0 +1,88 @@
+CREATE TABLE Stud_Marks (
+    roll_no INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50),
+    total_marks INT
+);
+
+CREATE TABLE Result (
+    roll_no INT,
+    name VARCHAR(50),
+    grade VARCHAR(50)
+);
+
+
+DELIMITER #
+
+CREATE PROCEDURE proc_Grade(
+    IN p_roll INT,
+    IN p_name VARCHAR(50),
+    IN p_marks INT
+)
+BEGIN
+    DECLARE v_grade VARCHAR(50);
+
+    -- Grade categorization
+    IF p_marks BETWEEN 990 AND 1500 THEN
+        SET v_grade = 'Distinction';
+    ELSEIF p_marks BETWEEN 900 AND 989 THEN
+        SET v_grade = 'First Class';
+    ELSEIF p_marks BETWEEN 825 AND 899 THEN
+        SET v_grade = 'Higher Second Class';
+    ELSE
+        SET v_grade = 'Fail';
+    END IF;
+
+    -- Insert result into Result table
+    INSERT INTO Result (roll_no, name, grade)
+    VALUES (p_roll, p_name, v_grade);
+
+END
+#
+
+DELIMITER ;
+
+
+DELIMITER #
+
+CREATE FUNCTION fn_Grade(p_marks INT)
+RETURNS VARCHAR(50)
+DETERMINISTIC
+BEGIN
+    DECLARE v_grade VARCHAR(50);
+
+    IF p_marks BETWEEN 990 AND 1500 THEN
+        SET v_grade = 'Distinction';
+    ELSEIF p_marks BETWEEN 900 AND 989 THEN
+        SET v_grade = 'First Class';
+    ELSEIF p_marks BETWEEN 825 AND 899 THEN
+        SET v_grade = 'Higher Second Class';
+    ELSE
+        SET v_grade = 'Fail';
+    END IF;
+
+    RETURN v_grade;
+END
+#
+
+DELIMITER ;
+
+-- Insert sample students
+INSERT INTO Stud_Marks (name, total_marks) VALUES ('Alice', 1020);
+INSERT INTO Stud_Marks (name, total_marks) VALUES ('Bob', 950);
+INSERT INTO Stud_Marks (name, total_marks) VALUES ('Charlie', 870);
+INSERT INTO Stud_Marks (name, total_marks) VALUES ('David', 800);
+
+-- Call procedure for each student
+CALL proc_Grade(1, 'Alice', 1020);
+CALL proc_Grade(2, 'Bob', 950);
+CALL proc_Grade(3, 'Charlie', 870);
+CALL proc_Grade(4, 'David', 800);
+
+-- Check results
+SELECT * FROM Result;
+
+
+
+-- Directly get grade for a mark
+SELECT fn_Grade(1020) AS Grade;   -- Returns 'Distinction'
+SELECT fn_Grade(870) AS Grade;    -- Returns 'Higher Second Class'

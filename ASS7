@@ -1,0 +1,104 @@
+-- Library table
+CREATE TABLE LibraryTbl (
+    book_id INT PRIMARY KEY,
+    book_name VARCHAR(100),
+    author VARCHAR(100),
+    no_of_copies INT
+);
+
+-- Audit table
+CREATE TABLE Library_AuditTbl (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    action_type VARCHAR(20),
+    old_book_id INT,
+    old_book_name VARCHAR(100),
+    old_author VARCHAR(100),
+    old_copies INT,
+    action_user VARCHAR(100),
+    action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Transaction table
+CREATE TABLE TransactionTbl (
+    transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+    book_id INT,
+    issue_or_return VARCHAR(20),
+    no_of_copies INT
+);
+
+DELIMITER $$
+
+-- Trigger for INSERT
+CREATE TRIGGER trg_library_insert
+AFTER INSERT ON LibraryTbl
+FOR EACH ROW
+BEGIN
+    INSERT INTO Library_AuditTbl(action_type, old_book_id, old_book_name, old_author, old_copies, action_user)
+    VALUES('INSERT', NEW.book_id, NEW.book_name, NEW.author, NEW.no_of_copies, USER());
+END$$
+
+-- Trigger for UPDATE
+CREATE TRIGGER trg_library_update
+BEFORE UPDATE ON LibraryTbl
+FOR EACH ROW
+BEGIN
+    INSERT INTO Library_AuditTbl(action_type, old_book_id, old_book_name, old_author, old_copies, action_user)
+    VALUES('UPDATE', OLD.book_id, OLD.book_name, OLD.author, OLD.no_of_copies, USER());
+END$$
+
+-- Trigger for DELETE
+CREATE TRIGGER trg_library_delete
+BEFORE DELETE ON LibraryTbl
+FOR EACH ROW
+BEGIN
+    INSERT INTO Library_AuditTbl(action_type, old_book_id, old_book_name, old_author, old_copies, action_user)
+    VALUES('DELETE', OLD.book_id, OLD.book_name, OLD.author, OLD.no_of_copies, USER());
+END$$
+
+-- Trigger to handle book issue/return
+CREATE TRIGGER trg_check_issue
+BEFORE INSERT ON TransactionTbl
+FOR EACH ROW
+BEGIN
+    DECLARE available INT;
+    SELECT no_of_copies INTO available FROM LibraryTbl WHERE book_id = NEW.book_id;
+
+    IF NEW.issue_or_return = 'issue' THEN
+        IF NEW.no_of_copies > available THEN
+            SET NEW.no_of_copies = available;
+        END IF;
+        UPDATE LibraryTbl
+        SET no_of_copies = no_of_copies - NEW.no_of_copies
+        WHERE book_id = NEW.book_id;
+    ELSEIF NEW.issue_or_return = 'return' THEN
+        UPDATE LibraryTbl
+        SET no_of_copies = no_of_copies + NEW.no_of_copies
+        WHERE book_id = NEW.book_id;
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- Test Data
+INSERT INTO LibraryTbl VALUES (1, 'DBMS', 'Navathe', 5);
+INSERT INTO LibraryTbl VALUES (2, 'Operating System', 'Galvin', 2);
+
+-- Insert Audit Test
+INSERT INTO LibraryTbl VALUES (3, 'Networking', 'Tanenbaum', 3);
+
+-- Update Audit Test
+UPDATE LibraryTbl SET no_of_copies = 10 WHERE book_id = 1;
+
+-- Delete Audit Test
+DELETE FROM LibraryTbl WHERE book_id = 2;
+
+-- Issue book (more than available → auto-adjusted)
+INSERT INTO TransactionTbl(book_id, issue_or_return, no_of_copies) VALUES (1, 'issue', 20);
+
+-- Return book
+INSERT INTO TransactionTbl(book_id, issue_or_return, no_of_copies) VALUES (1, 'return', 3);
+
+-- Check Results
+SELECT * FROM LibraryTbl;
+SELECT * FROM Library_AuditTbl;
+SELECT * FROM TransactionTbl;

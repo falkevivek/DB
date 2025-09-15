@@ -1,0 +1,50 @@
+CREATE TABLE N_EmpId (
+    emp_id INT PRIMARY KEY,
+    emp_name VARCHAR(50),
+    emp_salary DECIMAL(10,2)
+);
+
+INSERT INTO N_EmpId VALUES (101, 'Alice', 50000);
+INSERT INTO N_EmpId VALUES (102, 'Bob', 60000);
+INSERT INTO N_EmpId VALUES (103, 'Charlie', 55000);
+
+CREATE TABLE O_EmpId (
+    emp_id INT PRIMARY KEY,
+    emp_name VARCHAR(50),
+    emp_salary DECIMAL(10,2)
+);
+
+DELIMITER $$
+
+CREATE PROCEDURE MergeEmpData()
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE v_id INT;
+    DECLARE v_name VARCHAR(50);
+    DECLARE v_salary DECIMAL(10,2);
+
+    DECLARE emp_cursor CURSOR FOR 
+        SELECT emp_id, emp_name, emp_salary FROM N_EmpId;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN emp_cursor;
+
+    read_loop: LOOP
+        FETCH emp_cursor INTO v_id, v_name, v_salary;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        INSERT IGNORE INTO O_EmpId(emp_id, emp_name, emp_salary)
+        VALUES(v_id, v_name, v_salary);
+    END LOOP;
+
+    CLOSE emp_cursor;
+END$$
+
+DELIMITER ;
+
+CALL MergeEmpData();
+
+SELECT * FROM O_EmpId;

@@ -1,0 +1,138 @@
+-- Create Tables
+CREATE TABLE Dept (
+    Dept_id INT PRIMARY KEY,
+    Dept_name VARCHAR(50) UNIQUE,
+    location VARCHAR(50)
+);
+
+CREATE TABLE Employee (
+    Emp_id INT PRIMARY KEY AUTO_INCREMENT,
+    Dept_id INT,
+    Emp_fname VARCHAR(50) NOT NULL,
+    Emp_lname VARCHAR(50),
+    Emp_Position VARCHAR(50),
+    Emp_salary DECIMAL(10,2),
+    Emp_JoinDate DATE,
+    FOREIGN KEY (Dept_id) REFERENCES Dept(Dept_id) ON DELETE CASCADE
+);
+
+CREATE TABLE Project (
+    Proj_id INT PRIMARY KEY AUTO_INCREMENT,
+    Dept_id INT,
+    Proj_Name VARCHAR(100),
+    Proj_Location VARCHAR(50),
+    Proj_cost DECIMAL(12,2),
+    Proj_year YEAR,
+    FOREIGN KEY (Dept_id) REFERENCES Dept(Dept_id) ON DELETE CASCADE
+);
+
+-- Insert Departments
+INSERT INTO Dept VALUES
+(1,'Computer','Pune'),
+(2,'IT','Delhi'),
+(3,'HR','Mumbai'),
+(4,'Finance','Chennai');
+
+-- Insert Employees
+INSERT INTO Employee (Dept_id, Emp_fname, Emp_lname, Emp_Position, Emp_salary, Emp_JoinDate) VALUES
+(1,'Peter','Smith','Manager',60000,'1980-01-15'),
+(2,'Hannah','Jones','Clerk',35000,'1982-06-20'),
+(1,'Paul','Adams','Analyst',50000,'1990-02-10'),
+(2,'Harry','White','Manager',70000,'1979-09-05'),
+(1,'Priya','Sharma','Engineer',55000,'2000-03-12'),
+(3,'John','Doe','Clerk',30000,'1995-11-18'),
+(4,'Neha','Verma','Accountant',40000,'2003-07-09'),
+(2,'Helen','Green','Analyst',48000,'1984-08-25'),
+(3,'Pooja','Rao','Clerk',32000,'1999-12-01'),
+(4,'Harsh','Patel','Manager',75000,'2001-05-22');
+
+-- Insert Projects
+INSERT INTO Project (Dept_id, Proj_Name, Proj_Location, Proj_cost, Proj_year) VALUES
+(1,'DBMS Project','Pune',120000,2004),
+(2,'AI System','Delhi',450000,2005),
+(3,'Payroll','Mumbai',80000,2007),
+(1,'Networking','Pune',300000,2007),
+(4,'Finance App','Chennai',600000,2020),
+(2,'Cloud Infra','Delhi',150000,2015);
+
+-- 1. Employee + Department details using NATURAL JOIN
+SELECT * 
+FROM Employee 
+NATURAL JOIN Dept;
+
+-- 2. Emp_fname, Emp_position, location, Emp_JoinDate with same Dept id
+SELECT e.Emp_fname, e.Emp_Position, d.location, e.Emp_JoinDate
+FROM Employee e
+JOIN Dept d ON e.Dept_id = d.Dept_id;
+
+-- 3. Employee details, Proj_id, Proj_cost where Project location ≠ Hyderabad
+SELECT e.*, p.Proj_id, p.Proj_cost
+FROM Employee e
+JOIN Project p ON e.Dept_id = p.Dept_id
+WHERE p.Proj_Location <> 'Hyderabad';
+
+-- 4. Dept_name, Employee name, Emp_position for Project year = 2020
+SELECT d.Dept_name, CONCAT(e.Emp_fname,' ',e.Emp_lname) AS Emp_Name, e.Emp_Position
+FROM Employee e
+JOIN Dept d ON e.Dept_id = d.Dept_id
+JOIN Project p ON d.Dept_id = p.Dept_id
+WHERE p.Proj_year = 2020;
+
+-- 5. Emp_position, Dept_name where Project cost > 30000
+SELECT DISTINCT e.Emp_Position, d.Dept_name
+FROM Employee e
+JOIN Dept d ON e.Dept_id = d.Dept_id
+JOIN Project p ON d.Dept_id = p.Dept_id
+WHERE p.Proj_cost > 30000;
+
+-- 6. Names of Projects started in 2015
+SELECT Proj_Name
+FROM Project
+WHERE Proj_year = 2015;
+
+-- 7. Dept_name having no_of_emp = 10
+SELECT d.Dept_name
+FROM Dept d
+JOIN Employee e ON d.Dept_id = e.Dept_id
+GROUP BY d.Dept_name
+HAVING COUNT(e.Emp_id) = 10;
+
+-- 8. Total employees who joined projects before 2009
+SELECT COUNT(DISTINCT e.Emp_id) AS Total_Employees
+FROM Employee e
+JOIN Project p ON e.Dept_id = p.Dept_id
+WHERE p.Proj_year < 2009;
+
+-- 9. Create a view showing Employee + Department details
+CREATE VIEW EmpDept_View AS
+SELECT e.Emp_id, e.Emp_fname, e.Emp_lname, e.Emp_Position, d.Dept_name, d.location
+FROM Employee e
+JOIN Dept d ON e.Dept_id = d.Dept_id;
+
+-- 10. Manipulations on view
+INSERT INTO EmpDept_View (Emp_id, Emp_fname, Emp_lname, Emp_Position, Dept_name, location)
+VALUES (200, 'Ravi', 'Kumar', 'Analyst', 'IT', 'Delhi');
+
+UPDATE EmpDept_View
+SET Emp_Position = 'Senior Analyst'
+WHERE Emp_id = 200;
+
+DELETE FROM EmpDept_View WHERE Emp_id = 200;
+
+DROP VIEW EmpDept_View;
+
+-- Examples of Joins
+-- Inner Join
+SELECT e.Emp_fname, d.Dept_name
+FROM Employee e
+INNER JOIN Dept d ON e.Dept_id = d.Dept_id;
+
+-- Left Join
+SELECT e.Emp_fname, d.Dept_name
+FROM Employee e
+LEFT JOIN Dept d ON e.Dept_id = d.Dept_id;
+
+-- Right Join
+SELECT e.Emp_fname, d.Dept_name
+FROM Employee e
+RIGHT JOIN Dept d ON e.Dept_id = d.Dept_id;

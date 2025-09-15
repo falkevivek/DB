@@ -1,0 +1,111 @@
+CREATE TABLE Dept (
+    Dept_id INT PRIMARY KEY,
+    Dept_name VARCHAR(50) UNIQUE,
+    Dept_location VARCHAR(50)
+);
+
+CREATE TABLE Employee (
+    Emp_id INT PRIMARY KEY AUTO_INCREMENT,
+    Dept_id INT,
+    Emp_fname VARCHAR(50) NOT NULL,
+    Emp_lname VARCHAR(50),
+    Emp_Position VARCHAR(50),
+    Emp_salary DECIMAL(10,2) CHECK(Emp_salary > 0),
+    Emp_JoinDate DATE,
+    FOREIGN KEY (Dept_id) REFERENCES Dept(Dept_id) ON DELETE CASCADE
+);
+
+CREATE TABLE Project (
+    Proj_id INT PRIMARY KEY AUTO_INCREMENT,
+    Dept_id INT,
+    Proj_Name VARCHAR(100),
+    Proj_Location VARCHAR(50),
+    Proj_cost DECIMAL(12,2) CHECK(Proj_cost > 0),
+    Proj_year YEAR,
+    FOREIGN KEY (Dept_id) REFERENCES Dept(Dept_id) ON DELETE CASCADE
+);
+
+
+-- Departments
+INSERT INTO Dept VALUES
+(1,'Computer','Pune'),
+(2,'IT','Delhi'),
+(3,'HR','Mumbai'),
+(4,'Finance','Chennai');
+
+-- Employees
+INSERT INTO Employee (Dept_id, Emp_fname, Emp_lname, Emp_Position, Emp_salary, Emp_JoinDate) VALUES
+(1,'Peter','Smith','Manager',60000,'1980-01-15'),
+(2,'Hannah','Jones','Clerk',35000,'1982-06-20'),
+(1,'Paul','Adams','Analyst',50000,'1990-02-10'),
+(2,'Harry','White','Manager',70000,'1979-09-05'),
+(1,'Priya','Sharma','Engineer',55000,'2000-03-12'),
+(3,'John','Doe','Clerk',30000,'1995-11-18'),
+(4,'Neha','Verma','Accountant',40000,'2003-07-09'),
+(2,'Helen','Green','Analyst',48000,'1984-08-25'),
+(3,'Pooja','Rao','Clerk',32000,'1999-12-01'),
+(4,'Harsh','Patel','Manager',75000,'2001-05-22');
+
+-- Projects
+INSERT INTO Project (Dept_id, Proj_Name, Proj_Location, Proj_cost, Proj_year) VALUES
+(1,'DBMS Project','Pune',120000,2004),
+(2,'AI System','Delhi',450000,2005),
+(3,'Payroll','Mumbai',80000,2007),
+(1,'Networking','Pune',300000,2007),
+(4,'Finance App','Chennai',600000,2005);
+
+
+
+
+-- 1. All Employee details with Dept ‘Computer’ or ‘IT’ and Emp_fname starting with 'p' or 'h'
+SELECT e.* 
+FROM Employee e 
+JOIN Dept d ON e.Dept_id = d.Dept_id
+WHERE d.Dept_name IN ('Computer','IT')
+AND (e.Emp_fname LIKE 'p%' OR e.Emp_fname LIKE 'h%');
+
+-- 2. Number of different Employee Positions
+SELECT COUNT(DISTINCT Emp_Position) AS PositionCount
+FROM Employee;
+
+-- 3. Increase salary by 10% if joined before 1985
+UPDATE Employee
+SET Emp_salary = Emp_salary * 1.10
+WHERE YEAR(Emp_JoinDate) < 1985;
+
+-- 4. Delete departments in Mumbai
+DELETE FROM Dept WHERE Dept_location='Mumbai';
+
+-- 5. Names of projects with location Pune
+SELECT Proj_Name FROM Project WHERE Proj_Location='Pune';
+
+-- 6. Projects with cost between 100000 and 500000
+SELECT * FROM Project WHERE Proj_cost BETWEEN 100000 AND 500000;
+
+-- 7. Project with maximum cost & average cost
+SELECT Proj_Name, Proj_cost
+FROM Project
+WHERE Proj_cost = (SELECT MAX(Proj_cost) FROM Project);
+
+SELECT AVG(Proj_cost) AS AvgCost FROM Project;
+
+-- 8. Employees with Emp_id, Emp name in decreasing order of Emp_lname
+SELECT Emp_id, CONCAT(Emp_fname,' ',Emp_lname) AS FullName
+FROM Employee
+ORDER BY Emp_lname DESC;
+
+-- 9. Projects in year 2004, 2005, 2007
+SELECT Proj_Name, Proj_Location, Proj_cost
+FROM Project
+WHERE Proj_year IN (2004,2005,2007);
+
+
+-- Simple View
+CREATE VIEW Emp_View AS
+SELECT Emp_id, Emp_fname, Emp_salary
+FROM Employee;
+
+-- Indexes
+CREATE INDEX idx_emp_fname ON Employee(Emp_fname);
+CREATE UNIQUE INDEX idx_dept_name ON Dept(Dept_name);
+CREATE INDEX idx_emp_composite ON Employee(Emp_fname, Emp_lname);

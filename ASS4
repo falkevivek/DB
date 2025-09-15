@@ -1,0 +1,109 @@
+CREATE TABLE borrower (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    roll_no INT,
+    name VARCHAR(50),
+    issuedate DATE,
+    nameofbook VARCHAR(50),
+    status VARCHAR(10)
+);
+
+CREATE TABLE fine (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    roll_no INT,
+    currdate DATE,
+    amt INT
+);
+
+
+
+DELIMITER #
+
+CREATE PROCEDURE insertBorrower(
+    IN p_roll INT, 
+    IN p_name VARCHAR(50), 
+    IN p_issue DATE, 
+    IN p_book VARCHAR(50), 
+    IN p_status VARCHAR(10)
+)
+BEGIN
+    INSERT INTO borrower (roll_no, name, issuedate, nameofbook, status)
+    VALUES (p_roll, p_name, p_issue, p_book, p_status);
+END
+#
+
+
+
+DELIMITER ;
+
+
+
+
+
+DELIMITER #
+
+CREATE PROCEDURE insertFine(
+    IN p_roll INT, 
+    IN p_date DATE, 
+    IN p_amt INT
+)
+BEGIN
+    INSERT INTO fine (roll_no, currdate, amt)
+    VALUES (p_roll, p_date, p_amt);
+END
+#
+
+DELIMITER ;
+
+
+
+DELIMITER #
+
+CREATE PROCEDURE calcFineAndReturn(
+    IN p_roll INT, 
+    IN p_book VARCHAR(50)
+)
+BEGIN
+    DECLARE v_days INT;
+    DECLARE v_amt INT DEFAULT 0;
+    DECLARE v_issue DATE;
+
+    DECLARE EXIT HANDLER FOR NOT FOUND
+    BEGIN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Borrower or Book not found';
+    END;
+
+    SELECT issuedate INTO v_issue
+    FROM borrower
+    WHERE roll_no = p_roll AND nameofbook = p_book;
+
+    SET v_days = DATEDIFF(CURDATE(), v_issue);
+
+    IF v_days > 14 THEN
+        IF v_days <= 30 THEN
+            SET v_amt = 5 * (v_days - 14);
+        ELSE
+            SET v_amt = 50 * (v_days - 14);
+        END IF;
+
+        CALL insertFine(p_roll, CURDATE(), v_amt);
+    END IF;
+
+    UPDATE borrower
+    SET status = 'R'
+    WHERE roll_no = p_roll AND nameofbook = p_book;
+
+END
+#
+
+DELIMITER ;
+
+
+CALL insertBorrower(1, 'Vivek', '2025-07-01', 'Atomic', 'I');
+CALL insertBorrower(2, 'Ravi', '2025-08-01', 'Physics', 'I');
+
+CALL calcFineAndReturn(1, 'Atomic');  
+CALL calcFineAndReturn(2, 'Physics'); 
+
+SELECT * FROM borrower;
+SELECT * FROM fine;

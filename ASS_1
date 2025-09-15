@@ -1,0 +1,74 @@
+CREATE DATABASE StudentDB;
+USE StudentDB;
+
+-- Students table
+CREATE TABLE Students (
+    StudentID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(100) NOT NULL,
+    Department VARCHAR(50)
+);
+
+-- Courses table
+CREATE TABLE Courses (
+    CourseID INT PRIMARY KEY AUTO_INCREMENT,
+    CourseName VARCHAR(100),
+    Credits INT
+);
+
+-- Results table
+CREATE TABLE Results (
+    ResultID INT PRIMARY KEY AUTO_INCREMENT,
+    StudentID INT,
+    CourseID INT,
+    Marks INT,
+    FOREIGN KEY (StudentID) REFERENCES Students(StudentID),
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID)
+);
+
+
+
+INSERT INTO Students (Name, Department) 
+VALUES ('Rahul', 'Computer Science'),
+       ('Priya', 'Electronics'),
+       ('Amit', 'Mechanical');
+
+
+INSERT INTO Courses (CourseName, Credits) 
+VALUES ('Database Systems', 4),
+       ('Computer Networks', 3),
+       ('Data Structures', 4);
+
+
+INSERT INTO Results (StudentID, CourseID, Marks)
+VALUES (1, 1, 85), (1, 2, 78),
+       (2, 1, 90), (2, 3, 88),
+       (3, 2, 75), (3, 3, 80);
+
+CREATE VIEW StudentResults AS
+SELECT s.Name, s.Department, c.CourseName, r.Marks
+FROM Students s
+JOIN Results r ON s.StudentID = r.StudentID
+JOIN Courses c ON r.CourseID = c.CourseID;
+
+SELECT * FROM StudentResults;
+
+
+-- Create a sequence that starts from 101 and increases by 1
+CREATE SEQUENCE seq_roll START WITH 101 INCREMENT BY 1;
+
+-- Use the sequence to insert student data
+INSERT INTO Students (StudentID, Name, Department)
+VALUES (NEXT VALUE FOR seq_roll, 'Neha', 'IT');
+
+-- Next student will get 102 automatically
+INSERT INTO Students (StudentID, Name, Department)
+VALUES (NEXT VALUE FOR seq_roll, 'Amit', 'CS');
+
+
+CREATE INDEX idx_department ON Students(Department);
+
+CREATE INDEX idx_name_dept ON Students(Name, Department);
+
+SHOW INDEXES FROM Students;
+
+DROP INDEX idx_department ON Students;
